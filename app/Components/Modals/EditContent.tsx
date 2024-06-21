@@ -1,21 +1,32 @@
 "use client";
 import { useGlobalState } from "@/app/context/globalProvider";
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
-function EditContent(task: any) {
-  // const [title, setTitle] = useState("");
-  const [title, setTitle] = useState(() => {
-    // Some expensive computation or data fetching logic
-    return "Computed Title";
-  });
+function EditContent({
+  task,
+  closeModalEdit,
+}: {
+  task: any;
+  closeModalEdit: () => void;
+}) {
+  const [title, setTitle] = useState(task.title || "");
+  const [description, setDescription] = useState(task.description || "");
+  const [date, setDate] = useState(task.date || "");
+  const [completed, setCompleted] = useState(task.isCompleted || false);
+  const [important, setImportant] = useState(task.important || false);
+  const { allTasks } = useGlobalState();
 
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [completed, setCompleted] = useState(false);
-  const [important, setImportant] = useState(false);
-  const { allTasks, closeModalEdit } = useGlobalState();
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title || "");
+      setDescription(task.description || "");
+      setDate(task.date || "");
+      setCompleted(task.isCompleted || false);
+      setImportant(task.important || false);
+    }
+  }, [task]);
 
   const handleChange = (name: string) => (e: any) => {
     switch (name) {
@@ -41,29 +52,28 @@ function EditContent(task: any) {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    const task = {
+    const updatedTask = {
+      ...task,
       title,
       description,
       date,
-      completed,
+      isCompleted: completed,
       important,
     };
 
     try {
-      const res = await axios.post("/api/tasks", task);
+      const res = await axios.post("/api/tasks", updatedTask);
 
       if (res.data.error) {
         toast.error(res.data.error);
-      }
-
-      if (!res.data.error) {
-        toast.success("Task created successfully!");
+      } else {
+        toast.success("Task updated successfully!");
         closeModalEdit();
         allTasks();
       }
     } catch (error) {
       toast.error("Something went wrong. Your toast is burnt!\n" + error);
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -80,7 +90,7 @@ function EditContent(task: any) {
           className="w-full block rounded-lg border dark:border-none dark:bg-neutral-600 py-[9px] px-3 pr-4 text-sm text-black focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
           type="text"
           id="title"
-          value={task.title}
+          value={title}
           name="title"
           onChange={handleChange("title")}
           placeholder="Your title here"
@@ -93,7 +103,7 @@ function EditContent(task: any) {
         <textarea
           className="w-full block rounded-lg border dark:border-none dark:bg-neutral-600 py-[9px] px-3 pr-4 text-sm text-black focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
           id="description"
-          value={task.description}
+          value={description}
           onChange={handleChange("description")}
           name="description"
           rows={4}
@@ -108,7 +118,7 @@ function EditContent(task: any) {
           className="w-40 block rounded-lg border dark:border-none dark:bg-neutral-600 py-[9px] px-3 pr-4 text-sm text-black focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none"
           type="date"
           id="date"
-          value={task.date}
+          value={date}
           name="date"
           onChange={handleChange("date")}
           placeholder="Enter a date here."
@@ -127,13 +137,13 @@ function EditContent(task: any) {
           className="w-4 h-4 text-blue-500 bg-gray-100 border-gray-300 rounded focus:ring-blue-400 dark:focus:ring-blue-500 dark:ring-offset-gray-700 focus:ring-1 dark:bg-gray-700 dark:border-gray-600 hover:cursor-pointer"
           type="checkbox"
           id="completed"
-          value={task.completed}
+          checked={completed}
           name="completed"
           onChange={handleChange("completed")}
         />
       </div>
 
-      {/* isImportant */}
+      {/* Important */}
       <div className="flex items-center mb-4">
         <label
           htmlFor="important"
@@ -145,7 +155,7 @@ function EditContent(task: any) {
           className="w-4 h-4 text-blue-500 bg-gray-100 border-gray-300 rounded focus:ring-blue-400 dark:focus:ring-blue-500 dark:ring-offset-gray-700 focus:ring-1 dark:bg-gray-700 dark:border-gray-600 hover:cursor-pointer"
           type="checkbox"
           id="important"
-          value={task.important}
+          checked={important}
           name="important"
           onChange={handleChange("important")}
         />
